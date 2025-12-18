@@ -1,1 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DHL Shipment Tracking Dashboard</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#121b2f; --muted:#9fb0d0; --text:#e9f0ff;
+      --accent:#4f8cff; --line:#223154; --ok:#25c26e;
+    }
+    body{ margin:0; font-family: Arial, sans-serif; background:linear-gradient(180deg,#0b1220,#070b14); color:var(--text); }
+    .wrap{ max-width: 1050px; margin: 26px auto; padding: 0 16px; }
+    .top{ display:flex; gap:14px; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; margin-bottom: 12px; }
+    .brand{ font-size: 18px; letter-spacing: .2px; }
+    .sub{ color:var(--muted); font-size: 13px; margin-top:6px; }
+    .pill{ background:#0f1730; border:1px solid var(--line); padding:8px 10px; border-radius:999px; color:var(--muted); font-size:13px; }
+    .grid{ display:grid; grid-template-columns: 1.1fr .9fr; gap:14px; }
+    @media (max-width: 920px){ .grid{ grid-template-columns:1fr; } }
+    .card{ background:rgba(18,27,47,.92); border:1px solid var(--line); border-radius:14px; padding:14px; }
+    h2{ margin:0 0 10px; font-size:16px; color:#dbe6ff; }
+    label{ display:block; margin-top:10px; color:var(--muted); font-size:13px; }
+    input, textarea, select{
+      width:100%; box-sizing:border-box; margin-top:6px; padding:11px 12px;
+      border-radius:10px; border:1px solid var(--line); background:#0e1630; color:var(--text);
+      outline:none;
+    }
+    textarea{ min-height: 92px; resize: vertical; }
+    .row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    @media (max-width: 520px){ .row{ grid-template-columns:1fr; } }
+    .btns{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+    button{
+      border:0; border-radius:10px; padding:11px 12px; cursor:pointer; font-weight:700;
+      background:var(--accent); color:#06102a;
+    }
+    .btn2{ background:#0f1730; color:var(--text); border:1px solid var(--line); font-weight:600; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .hint{ color:var(--muted); font-size:12px; line-height: 1.5; margin-top:8px; }
+
+    .kpi{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .kpi .box{ background:#0f1730; border:1px solid var(--line); border-radius:12px; padding:12px; }
+    .kpi .t{ font-size:12px; color:var(--muted); }
+    .kpi .v{ margin-top:6px; font-size:14px; }
+    .big{ grid-column: 1 / -1; }
+    .line{ height:1px; background:var(--line); margin: 12px 0; }
+    .badge{ display:inline-block; border:1px solid var(--line); background:#0f1730; padding:6px 10px; border-radius:999px; color:var(--muted); font-size:12px; }
+    .status{ color:var(--ok); font-weight:700; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="brand">Your Company • DHL Tracking Dashboard</div>
+        <div class="sub">Fill details → generate a customer link → customer taps “Track on DHL”.</div>
+      </div>
+      <div class="pill">Carrier: DHL • Service: <span id="servicePill">—</span></div>
+    </div>
+
+    <div class="grid">
+      <!-- Admin -->
+      <div class="card">
+        <h2>Admin: Shipment details</h2>
+
+        <label>Shipper name</label>
+        <input id="shipper" placeholder="e.g., Ellen Leslie" />
+
+        <div class="row">
+          <div>
+            <label>Customer name</label>
+            <input id="cust" placeholder="e.g., Marty Boughton" />
+          </div>
+          <div>
+            <label>Customer phone</label>
+            <input id="phone" placeholder="e.g., 4173650845" />
+          </div>
+        </div>
+
+        <label>Tracking number (AWB)</label>
+        <input id="t" class="mono" placeholder="e.g., 1234567890" required />
+
+        <label>Destination address</label>
+        <textarea id="dest" placeholder="Street, City, State, Postal code, Country"></textarea>
+
+        <div class="row">
+          <div>
+            <label>Service type</label>
+            <select id="service">
+              <option value="">Select</option>
+              <option value="EXPRESS">EXPRESS</option>
+              <option value="ECONOMY">ECONOMY</option>
+            </select>
+          </div>
+          <div>
+            <label>Status (manual)</label>
+            <select id="status">
+              <option value="LABEL_CREATED">Label created</option>
+              <option value="PICKED_UP">Picked up</option>
+              <option value="IN_TRANSIT">In transit</option>
+              <option value="OUT_FOR_DELIVERY">Out for delivery</option>
+              <option value="DELIVERED">Delivered</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Pickup date</label>
+            <input id="pickup" placeholder="18/12/2025" />
+          </div>
+          <div>
+            <label>ETA</label>
+            <input id="eta" placeholder="19/12/2025" />
+          </div>
+        </div>
+
+        <label>Notes / special instructions</label>
+        <textarea id="notes" placeholder="e.g., Handle with care"></textarea>
+
+        <div class="btns">
+          <button id="makeLink" type="button">Generate customer link</button>
+          <button class="btn2" id="copyLink" type="button">Copy link</button>
+          <button class="btn2" id="openDhl" type="button">Open DHL tracking</button>
+        </div>
+
+        <label>Customer URL</label>
+        <input id="out" class="mono" readonly />
+
+        <div class="hint">
+          The link stores these fields in the URL query string using <span class="mono">URLSearchParams</span>, so a static GitHub Pages/Netlify site can “remember” the shipment without any backend. [web:67]
+        </div>
+      </div>
+
+      <!-- Customer card -->
+      <div class="card">
+        <h2>Customer: Tracking card</h2>
+
+        <div class="kpi">
+          <div class="box">
+            <div class="t">Shipper</div>
+            <div class="v" id="vShipper">—</div>
+          </div>
+          <div class="box">
+            <div class="t">Service</div>
+            <div class="v"><span class="badge" id="vService">—</span></div>
+          </div>
+
+          <div class="box big">
+            <div class="t">Tracking number (AWB)</div>
+            <div class="v mono" id="vT">—</div>
+          </div>
+
+          <div class="box">
+            <div class="t">Customer</div>
+            <div class="v" id="vCust">—</div>
+          </div>
+          <div class="box">
+            <div class="t">Phone</div>
+            <div class="v mono" id="vPhone">—</div>
+          </div>
+
+          <div class="box big">
+            <div class="t">Destination</div>
+            <div class="v" id="vDest">—</div>
+          </div>
+
+          <div class="box">
+            <div class="t">Pickup date</div>
+            <div class="v" id="vPickup">—</div>
+          </div>
+          <div class="box">
+            <div class="t">ETA</div>
+            <div class="v" id="vEta">—</div>
+          </div>
+
+          <div class="box big">
+            <div class="t">Status</div>
+            <div class="v status" id="vStatus">—</div>
+          </div>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="hint" id="vNotes">Notes: —</div>
+
+        <div class="btns" style="margin-top:12px;">
+          <button id="customerTrack" type="button">Track on DHL</button>
+          <button class="btn2" id="customerCopy" type="button">Copy tracking #</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function setText(id, value, fallback="—") { $(id).textContent = value ? value : fallback; }
+
+    function openDhl(tracking) {
+      if (!tracking) return;
+      const url =
+        "https://www.dhl.com/global-en/home/tracking/tracking-express.html?submit=1&tracking-id=" +
+        encodeURIComponent(tracking);
+      window.open(url, "_blank");
+    }
+
+    function buildCustomerUrl() {
+      const base = location.origin + location.pathname;
+      const u = new URL(base);
+      const p = u.searchParams; // URLSearchParams [web:67]
+
+      const shipper = $("shipper").value.trim();
+      const t = $("t").value.trim();
+
+      if (shipper) p.set("shipper", shipper);
+      if (t) p.set("t", t);
+
+      const fields = ["cust","phone","dest","service","pickup","eta","notes","status"];
+      for (const k of fields) {
+        const v = $(k).value.trim();
+        if (v) p.set(k, v); else p.delete(k);
+      }
+      return u.toString();
+    }
+
+    function syncFromUrl() {
+      const p = new URLSearchParams(location.search); // URLSearchParams [web:67]
+
+      const shipper = p.get("shipper") || "";
+      const t = p.get("t") || "";
+      const cust = p.get("cust") || "";
+      const phone = p.get("phone") || "";
+      const dest = p.get("dest") || "";
+      const service = p.get("service") || "";
+      const pickup = p.get("pickup") || "";
+      const eta = p.get("eta") || "";
+      const notes = p.get("notes") || "";
+      const status = p.get("status") || "";
+
+      // Fill admin inputs (so you can edit from a shared link)
+      if (shipper) $("shipper").value = shipper;
+      if (t) $("t").value = t;
+      if (cust) $("cust").value = cust;
+      if (phone) $("phone").value = phone;
+      if (dest) $("dest").value = dest;
+      if (service) $("service").value = service;
+      if (pickup) $("pickup").value = pickup;
+      if (eta) $("eta").value = eta;
+      if (notes) $("notes").value = notes;
+      if (status) $("status").value = status;
+
+      // Customer view
+      setText("vShipper", shipper);
+      setText("vT", t);
+      setText("vCust", cust);
+      setText("vPhone", phone);
+      setText("vDest", dest);
+      setText("vService", service);
+      setText("vPickup", pickup);
+      setText("vEta", eta);
+      $("vNotes").textContent = "Notes: " + (notes ? notes : "—");
+      setText("vStatus", (status || "").replaceAll("_"," "), "—");
+
+      $("servicePill").textContent = service ? service : "—";
+    }
+
+    $("makeLink").addEventListener("click", () => {
+      const url = buildCustomerUrl();
+      $("out").value = url;
+      history.replaceState(null, "", url);
+      syncFromUrl();
+    });
+
+    $("copyLink").addEventListener("click", async () => {
+      if (!$("out").value) $("out").value = buildCustomerUrl();
+      await navigator.clipboard.writeText($("out").value);
+      $("copyLink").textContent = "Copied";
+      setTimeout(() => $("copyLink").textContent = "Copy link", 900);
+    });
+
+    $("openDhl").addEventListener("click", () => openDhl($("t").value.trim()));
+    $("customerTrack").addEventListener("click", () => {
+      const t = new URLSearchParams(location.search).get("t") || $("t").value.trim();
+      openDhl(t);
+    });
+    $("customerCopy").addEventListener("click", async () => {
+      const t = new URLSearchParams(location.search).get("t") || $("t").value.trim();
+      if (!t) return;
+      await navigator.clipboard.writeText(t);
+      $("customerCopy").textContent = "Copied";
+      setTimeout(() => $("customerCopy").textContent = "Copy tracking #", 900);
+    });
+
+    // Prefill with YOUR provided data (first time opening)
+    function seedIfEmpty() {
+      const p = new URLSearchParams(location.search);
+      if (p.get("t")) return; // already seeded via URL
+
+      $("shipper").value = "Ellen Leslie / Ann Sherri";
+      $("t").value = "MAR839Q632";
+      $("cust").value = "MARTY BOUGHTON";
+      $("phone").value = "4173650845";
+      $("dest").value = "1600, BIRD ROAD, APT 101, BRANSON MO, 65616";
+      $("service").value = "EXPRESS";
+      $("pickup").value = "18/12/2025";
+      $("eta").value = "19/12/2025";
+      $("notes").value = "HANDLE PACKAGE WITH CARE";
+      $("status").value = "PICKED_UP";
+    }
+
+    seedIfEmpty();
+    $("out").value = buildCustomerUrl();
+    syncFromUrl();
+  </script>
+</body>
+</html>
 
